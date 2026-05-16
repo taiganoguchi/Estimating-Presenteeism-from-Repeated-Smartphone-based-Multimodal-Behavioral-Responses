@@ -1,0 +1,40 @@
+# データ分析・統計
+numpy==2.4.4
+pandas==3.0.2
+matplotlib==3.10.8
+seaborn==0.13.2
+scikit-learn==1.8.0
+imbalanced-learn==0.14.1
+scipy==1.17.1
+optuna==4.8.0
+lightgbm==4.6.0
+networkx==3.6.1
+python-louvain==0.16
+torch==2.11.0
+networkx==3.6.1
+openpyxl==3.1.5
+deepspeed==0.18.9
+librosa==0.11.0
+pyarrow==23.0.1
+fastparquet==2026.3.0
+sentence_transformers==5.3.0
+unidic_lite==1.0.8
+fugashi==1.5.2
+ipadic==1.0.0
+
+
+# 音声・音響処理
+praat-parselmouth==0.4.7
+sentencepiece==0.2.1
+protobuf==7.34.1
+
+# モデル実行・自然言語処理
+transformers==5.5.0
+torch_geometric==2.7.0
+lxml==6.0.2
+tensorboard==2.20.0
+
+# JupyterLab環境
+jupyterlab==4.5.6
+notebook==7.5.5
+ipykernel==7.2.0

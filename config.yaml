@@ -1,0 +1,310 @@
+paths:
+  # コンテナ内では DATA_ROOT_HOST が DATA_ROOT_CONTAINER (= root 以下) に
+  # bind mount される。すべてのデータパスはこの root からの相対で解決する。
+  # 元データの ID 番号付きファイル名は cohort-* として汎用化している。
+  root: /workspace/data/2024/cohort
+  results_dir: results
+  outputs_dir: outputs_clean_v7
+  media_dir: data_all/surveys
+  surveys_csv: data_all/cohort-surveys.csv
+  users_csv: data_all/cohort-users.csv
+  doctor_xlsx: results/doctor_evaluation.xlsx
+  manifest_filename: sample_manifest.parquet
+scan:
+  user_dir_regex: ^S\d{5}$
+  video_id_regex: ^(S\d{5})_(\d{14})$
+  expected_suffixes:
+    openface_results: _result.csv
+    whisper: _whisper.csv
+    parselmouth: _parselmouth.csv
+ingest:
+  encoding: utf-8-sig
+  sep: ','
+  quotechar: '"'
+  on_bad_lines: skip
+column_indices:
+  users:
+    employee_id: 4
+    age: 5
+    gender: 6
+    education: 7
+    role: 8
+    commute_minutes_oneway: 10
+  surveys:
+    employee_id: 3
+    place: 4
+    state: 5
+    sleep_hours: 6
+    video_mp4: 11
+    work_hours_today: 35
+preprocess:
+  filters:
+    face_success_ratio_min: 0.2
+    voice_voiced_ratio_min: 0.0
+  time_align:
+    method: time
+    window_sec: 1.0
+    step_sec: 1.0
+  label:
+    column: label
+sequence:
+  base_hz: 100
+  window_ms: 50.0
+  hop_ms: 50.0
+  max_seq_len: 2048
+  truncate_mode: uniform
+openface:
+  default_fps: 30.0
+parselmouth:
+  sr: 16000
+  frame_len_ms: 25.0
+  hop_ms: 10.0
+  f0_floor: 60.0
+  f0_ceil: 400.0
+  formant_max: 5500.0
+  n_mfcc: 13
+  use_prosody: true
+  prosody_cols:
+  - F0
+  - Intensity
+  - HNR
+  - Formant1
+  - Formant2
+  - Formant3
+  - Formant4
+  - SpectralRolloff
+  - SpectralFlatness
+  use_mfcc: true
+  mfcc_dim: 13
+  use_formant: false
+dataset:
+  batch_size: 32
+  shuffle: true
+  num_workers: 8
+  pin_memory: false
+  prefetch_factor: 2
+  persistent_workers: true
+  face_features:
+    au_r:
+    - AU01_r
+    - AU02_r
+    - AU04_r
+    - AU05_r
+    - AU06_r
+    - AU07_r
+    - AU09_r
+    - AU10_r
+    - AU12_r
+    - AU14_r
+    - AU15_r
+    - AU17_r
+    - AU20_r
+    - AU23_r
+    - AU25_r
+    - AU26_r
+    - AU45_r
+    angles:
+    - gaze_angle_x
+    - gaze_angle_y
+    - pose_Rx
+    - pose_Ry
+    - pose_Rz
+  use_speech_crop: false
+  whisper_user_speaker: 2
+  voice_features:
+    base:
+    - F0
+    - Intensity
+    - HNR
+    - Formant1
+    - Formant2
+    - Formant3
+    - Formant4
+    - SpectralRolloff
+    - SpectralFlatness
+    mfcc: 13
+  frame_hop: 1
+split:
+  mode: group_kfold
+  n_splits: 5
+  seed: 42
+  test_size: 0.2
+  group_col: user_id
+  stratify_col: label
+  save_to: split.json
+  outer:
+    scheme: kfold
+    k_outer: 5
+    repeats: 5
+    seed_base: 123
+    holdout_test_size: 0.2
+    group_mode: user
+    ensure_strata: true
+normalization:
+  eps: 1.0e-08
+  user_regex: (S\d{5})
+  grouping: user_x_cohort
+  face:
+    scope: per_user
+  voice:
+    prosody:
+      scope: per_user
+    mfcc:
+      cmvn: true
+features:
+  enable: true
+  use_cache: false
+  sbert:
+    model: sonoisa/sentence-bert-base-ja-mean-tokens-v2
+    dim: 768
+tokenize:
+  base_hz: 100
+  window_ms: 50.0
+  hop_ms: 50.0
+  max_seq_len: 2048
+  downsample: uniform
+  normalize:
+    method: blended
+    freeze_text: true
+    eps: 1.0e-06
+data:
+  id_cols:
+  - user_id
+  - video_id
+  group_col: user_id
+  target_col: label
+labels:
+  consensus: majority
+  tie_break: nearest
+  emit_soft_target: true
+cv:
+  n_splits: 10
+  shuffle: false
+  group_key: user_id
+model:
+  arch: transformer_encoder
+  search_space:
+    d_model:
+    - 256
+    - 320
+    - 384
+    - 512
+    - 640
+    - 768
+    n_heads:
+    - 8
+    - 10
+    - 12
+    n_layers:
+    - 4
+    - 6
+    - 8
+    - 10
+    dropout:
+    - 0.1
+    - 0.2
+    - 0.3
+turn_id:
+  use: true
+  embed_dim: 8
+  num_embeddings: 128
+  oob_to_zero: true
+train:
+  batch_size: 32
+  grad_accum_steps: 1
+  lr: 0.00015
+  weight_decay: 1.0e-05
+  epochs: 120
+  use_amp: true
+  grad_clip_norm: 1.0
+  use_weighted_sampler: false
+  pos_weight_gamma: 0.5
+  scheduler: cosine
+  warmup_ratio: 0.06
+  ckpt_topk: 3
+  ckpt_metric: macro_f1
+  save_last: true
+  log_interval: 50
+  val_interval: 1
+optuna:
+  enable: true
+  n_trials: 80
+  timeout: null
+  study_name: heavy_search_v3
+  storage: null
+  objective_epochs: 80
+  search_space:
+    d_model:
+    - 256
+    - 320
+    - 384
+    - 512
+    - 640
+    - 768
+    n_heads:
+    - 8
+    - 10
+    - 12
+    n_layers:
+    - 4
+    - 6
+    - 8
+    - 10
+    dropout:
+    - 0.1
+    - 0.2
+    - 0.3
+    lr:
+    - loguniform:8e-5,3e-4
+    batch_size:
+    - 24
+    - 32
+    - 48
+    - 64
+  pruner:
+    type: median
+    warmup_epochs: 8
+cohort:
+  use_parts:
+  - sex
+  - age_bin
+  - role
+  plain_map:
+    static_gender: sex
+    static_role: role
+    static_education: edu
+    survey_place: place
+    survey_state: state
+  bins:
+    age:
+      mode: decade
+    commute:
+      edges:
+      - 0
+      - 30
+      - 60
+      - 9999
+    sleep:
+      edges:
+      - 0
+      - 5
+      - 7
+      - 24
+    workh:
+      edges:
+      - 0
+      - 6
+      - 9
+      - 24
+  rare:
+    min_count: 10
+    label: COHORT_RARE
+  fallback_with_user: true
+runtime:
+  seed: 42
+  device: auto
+  use_cache: false
+  deterministic: false
+  cudnn_benchmark: true
+  cublas_workspace_config: :16:8
+  allow_tf32: true

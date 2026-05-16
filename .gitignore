@@ -1,0 +1,86 @@
+# 機密データ（誤アップロード防止）
+/data/
+/data/**/*
+/results/graphs/
+/results/graphs/**/*
+/results/retrain_logs/
+/results/retrain_logs/**/*
+/outputs/
+/outputs/**/*/
+
+
+# data 配下は基本無視するが、空ディレクトリを残す用に .gitkeep を許可
+!/data/.gitkeep
+!/results/.gitkeep
+!/results/graphs/.gitkeep
+
+# Python / Jupyter 関連
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.ipynb_checkpoints/
+
+# 仮想環境／環境変数
+.venv/
+.env
+.env.*
+!.env.example
+
+# VSCode
+.vscode/
+
+# OS一時ファイル
+.DS_Store
+Thumbs.db
+
+# Experiment outputs (large/generated files — not for version control)
+revision/analyses/*.log
+revision/analyses/logs*/
+revision/analyses/archive_*/
+revision/analyses/*.png
+revision/analyses/*.csv
+revision/analyses/*.json
+*.bak
+pretrained/
+
+# Cached features (contains per-participant identifiers in filenames)
+cache/
+
+# Snapshot of internal-only config (contains absolute host paths and
+# pre-renamed file references). Regenerated on every pipeline run.
+outputs_clean_v7/config.snapshot.yaml
+
+# Local developer notes (not for public release)
+CLAUDE.md
+
+# Personal documents that may end up in revision/ during drafting
+revision/Taiga_RM2026.pdf
+revision/*_RM*.pdf
+revision/*personal*
+
+# Internal-only logs and intermediate analysis artefacts
+revision/v4_*.csv
+revision/v4_*.txt
+revision/predictions_per_clip_*.parquet
+revision/*_results.csv
+
+# drawio export rendered PNGs (regenerated on every render)
+drawio_out/
+
+# AI agent transcripts and ad-hoc audit logs (not for public release)
+revision/peer_review_*.md
+revision/audit_*.md
+revision/response_*log*.md
+revision/response_verify_*.md
+revision/agent_*log*.md
+revision/agent_edits_*.md
+revision/si_audit_*.md
+revision/si_restructure_*.md
+revision/meeting_*.md
+revision/plan_*.md
+revision/reviewer_status_*.md
+revision/reviewer_compliance_check.md
+revision/decision_letter_*.md
+revision/direction_*.md
+revision/v4_reference_numbers.md
