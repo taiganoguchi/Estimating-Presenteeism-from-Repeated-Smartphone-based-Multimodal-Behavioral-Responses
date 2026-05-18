@@ -35,20 +35,21 @@ python main.py reproduce --dry-run           # print the plan without executing
 ```
 
 The reproduction pipeline runs ten Python scripts in order; each maps
-one-to-one to a numerical row or figure in the manuscript:
+to a numerical row or figure in the manuscript or supporting information.
+Table/figure numbers below refer to the submitted revised manuscript:
 
-| # | Script | Output |
+| # | Script | Output (in submitted manuscript) |
 | --- | --- | --- |
 | 01 | `scripts/build_per_clip_predictions.py`     | Canonical per-clip parquet (OOF predictions for seven modality configurations) |
-| 02a | `scripts/compute_overall_metrics.py`        | Tables 1 and 2: overall + per-class metrics with cluster-bootstrap CIs |
-| 02b | `scripts/build_reference_tables.py`         | Four-configuration reference tables |
-| 03a | `scripts/paired_ttest_configs.py`           | Fold-level paired *t*-tests + Holm-Bonferroni correction |
-| 03b | `scripts/figure_modality_ablation.py`       | Modality-ablation figure |
-| 04a | `scripts/compute_subgroup_metrics.py`       | Subgroup metrics (speech tertile × clinical state) |
-| 04b | `scripts/figure_subgroup_heatmap.py`        | Subgroup-heatmap figure |
-| 05 | `scripts/simulate_conditional_capture.py`   | Conditional-capture deployment table |
-| 06 | `scripts/figure_calibration.py`             | Per-class reliability diagram |
-| 07 | `scripts/figure_proposed_method.py`         | Proposed-method architecture figure |
+| 02a | `scripts/compute_overall_metrics.py`        | **Table 1** (overall metrics, 4 text-containing configurations) + **S4 Table** (per-class F1/precision/recall with cluster-bootstrap 95% CIs) |
+| 02b | `scripts/build_reference_tables.py`         | Reference tables consumed by downstream scripts (intermediate) |
+| 03a | `scripts/paired_ttest_configs.py`           | **Table 2** (modality ablation): fold-level paired *t*-tests + Holm–Bonferroni correction across six contrasts vs. Text-only |
+| 03b | `scripts/figure_modality_ablation.py`       | Modality-ablation bar plot — *supplementary artifact; the submitted manuscript reports modality ablation as Table 2 only* |
+| 04a | `scripts/compute_subgroup_metrics.py`       | **Table 3** (subgroup analysis): speech-tertile × clinical-state grid; primary contrast is short-speech × non-Healthy (*n* = 77) |
+| 04b | `scripts/figure_subgroup_heatmap.py`        | Subgroup heatmap — *supplementary artifact; the submitted manuscript reports the subgroup result as Table 3 only* |
+| 05 | `scripts/simulate_conditional_capture.py`   | Conditional-capture deployment simulation — *supplementary artifact; not included in the submitted manuscript* |
+| 06 | `scripts/figure_calibration.py`             | **Fig 3** (per-class reliability diagrams across the four text-containing configurations) |
+| 07 | `scripts/figure_proposed_method.py`         | **Fig 2** (proposed three-stream Attention-MIL architecture) |
 
 ## Data access
 
@@ -61,9 +62,17 @@ manuscript. See
 code expects once you have obtained the dataset; the path is configured
 under `paths.root` in `config.yaml`.
 
-Early-dropout participants (first-to-last recording span shorter than
-`MIN_RECORDING_DAYS`, default **15 days**) are excluded automatically;
-cohort identifiers are never hard-coded.
+The submitted manuscript describes the participant cohort flow from
+**38 valid video submissions** through **34 participants with
+three-modality feature extraction and psychiatrist consensus labels**
+(four participants had no clip with a successful automatic transcript and
+were therefore not part of the labeling sample) to **29 participants**
+after the early-dropout filter. The early-dropout filter
+(first-to-last recording span shorter than `MIN_RECORDING_DAYS`,
+default **15 days**) is applied automatically by the training scripts;
+cohort identifiers are never hard-coded. The 38→34 transition is a
+property of the labeling sample fixed in `sample_manifest.parquet` and
+is not re-derived by these scripts.
 
 ## Repository layout
 
